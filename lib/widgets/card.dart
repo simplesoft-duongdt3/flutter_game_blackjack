@@ -9,6 +9,16 @@ class CardUtil {
   static int getWidthCardFromHeight(int cardHeight) {
     return cardHeight * 176 ~/ 250;
   }
+
+  static double radians2Degrees = 180.0 / pi;
+
+  static double degrees2Radians = pi / 180.0;
+
+  /// Convert [radians] to degrees.
+  static double degrees(double radians) => radians * radians2Degrees;
+
+  /// Convert [degrees] to radians.
+  static double radians(double degrees) => degrees * degrees2Radians;
 }
 
 class CardBackWidget extends StatelessWidget {
@@ -169,16 +179,6 @@ class CardFrontWidget extends StatelessWidget {
   final int cardHeight;
   final CardInfo card;
 
-  final double radians2Degrees = 180.0 / pi;
-
-  final double degrees2Radians = pi / 180.0;
-
-  /// Convert [radians] to degrees.
-  double degrees(double radians) => radians * radians2Degrees;
-
-  /// Convert [degrees] to radians.
-  double radians(double degrees) => degrees * degrees2Radians;
-
   const CardFrontWidget({
     Key? key,
     this.cardWidth = 176,
@@ -223,7 +223,7 @@ class CardFrontWidget extends StatelessWidget {
               right: 4,
               bottom: 4,
               child: Transform.rotate(
-                angle: radians(180),
+                angle: CardUtil.radians(180),
                 child: Text(
                   card.getCardText(),
                   style: TextStyle(
@@ -238,5 +238,77 @@ class CardFrontWidget extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class AnimationCardWidget extends StatefulWidget {
+  final CardInfo card;
+  final int cardWidth;
+  final int cardHeight;
+
+  const AnimationCardWidget({
+    Key? key,
+    required this.card,
+    required this.cardWidth,
+    required this.cardHeight,
+  }) : super(key: key);
+
+  @override
+  _AnimationCardWidgetState createState() => _AnimationCardWidgetState();
+}
+
+class _AnimationCardWidgetState extends State<AnimationCardWidget>
+    with TickerProviderStateMixin {
+  AnimationController? _controller;
+  Animation<double>? _animation;
+  AnimationStatus _animationStatus = AnimationStatus.dismissed;
+  @override
+  void initState() {
+    _controller = AnimationController(
+      duration: const Duration(seconds: 1),
+      vsync: this,
+    );
+
+    _animation = Tween(begin: 0.0, end: 1.0).animate(_controller!)
+      ..addListener(() {
+        setState(() {});
+      })
+      ..addStatusListener((status) {
+        _animationStatus = status;
+      });
+
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform(
+      alignment: FractionalOffset.center,
+      transform: Matrix4.identity()
+        ..setEntry(3, 2, 0.002)
+        ..rotateY(CardUtil.radians(180 - (_animation!.value * 180))),
+      child: GestureDetector(
+        onTap: () {
+          if (_animationStatus == AnimationStatus.dismissed) {
+            _controller?.forward();
+          } else {
+            _controller?.reverse();
+          }
+        },
+        child: _animation != null && _animation!.value > 0.5
+            ? CardFrontWidget(
+                cardWidth: widget.cardWidth,
+                cardHeight: widget.cardHeight,
+                card: widget.card,
+              )
+            : const CardBackWidget(),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
   }
 }

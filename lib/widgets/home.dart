@@ -89,13 +89,10 @@ class _MyHomePageState extends State<MyHomePage> {
       int cardWidth, int cardHeight, CardSuit suit, CardSymbol symbol) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
-      child: CardFrontWidget(
-        cardWidth: cardWidth,
+      child: AnimationCardWidget(
+        card: CardInfo(suit: suit, symbol: symbol),
         cardHeight: cardHeight,
-        card: CardInfo(
-          suit: suit,
-          symbol: symbol,
-        ),
+        cardWidth: cardWidth,
       ),
     );
   }
